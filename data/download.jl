@@ -2,7 +2,7 @@
 # Can download all with:
 # download_all(cgs_archives, "outdir_path")
 
-using Requests
+using HTTP
 
 # Links for current cgs game server.  More online here:
 #cgs_old_url = "http://cgos.boardspace.net/9x9/archive.html"
@@ -24,8 +24,8 @@ end
 "Fetch the urls for all the kgs game records"
 function fetch_urls(url, regex)
     # Download page source & parse out the record names
-    response = get(url)
-    html = readall(response)
+    response = HTTP.get(url)
+    html = String(response.body)
     fileurls = Vector{AbstractString}()
     offset = 1
     while true
@@ -46,10 +46,12 @@ function download_archive(url, outdir; expand=false, remove=false)
     name = ascii(split(url, "/")[end])
     outpath = joinpath(outdir, name)
 
-    archive = get(url)
-    save(archive, outpath)  # Save the payload to a file
+    archive = HTTP.get(url)
+    open(outpath, "w") do f
+        write(f, archive.body) # Save the payload to a file
+    end  
     if expand
-        @osx? run(`tar xfz $(outpath) -C $(outdir)`) : run(`tar xjf $(outpath) -C $(outdir)`)
+        Sys.isapple() ? run(`tar xfz $(outpath) -C $(outdir)`) : run(`tar xjf $(outpath) -C $(outdir)`)
     end
     if remove
         run(`rm $(outpath)`)
