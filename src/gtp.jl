@@ -9,15 +9,15 @@ function gtp(policy::Policy)
                       "list_commands", "protocol_version", "tsdebug"]
     board = Board()
     while true
-        println(STDERR, "start====")
-        flush(STDERR)
+        println(stderr, "start====")
+        flush(stderr)
         if eof(STDIN)
             return
         end
         line = readline()
-        println(STDERR, line)
-        println(STDERR, "========")
-        flush(STDERR)
+        println(stderr, line)
+        println(stderr, "========")
+        flush(stderr)
         if line == ""
             continue
         end
@@ -42,19 +42,19 @@ function gtp(policy::Policy)
         elseif command[1] == "play"
             if length(command) == 2
                 move = parse_coord(command[2])
-            else 
+            else
                 move = parse_coord(command[3])
             end
-            println(STDERR, command)
-            println(STDERR, move)
+            println(stderr, command)
+            println(stderr, move)
             play_move(board, move)
-            println(STDERR, "played move")
+            println(stderr, "played move")
         elseif command[1] == "genmove"
             move = choose_move(board, policy)
             play_move(board, move)
             ret = str_coord(move)
-            println(STDERR, ret)
-            println(STDERR, move)
+            println(stderr, ret)
+            println(stderr, move)
             # TODO: Resigning, passing
         elseif command[1] == "final_score"
             score = calculate_score(board)
@@ -94,8 +94,8 @@ function gtp(policy::Policy)
             out = @sprintf("?%s ???\n\n", cmdid)
         end
         @printf("%s", out)
-        println(STDERR, out)
+        println(stderr, out)
         flush(STDOUT)
-        flush(STDERR)
+        flush(stderr)
     end
 end

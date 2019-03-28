@@ -1,7 +1,4 @@
-julia 0.4
-Conda
-BinDeps
-PyCall
-Requests
+julia 0.7
+HTTP
 HDF5
 ArgParse

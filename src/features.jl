@@ -6,7 +6,7 @@ Discretize a 2D integer matrix into `maxval` binary layers
 Layers correspond to == 1, == 2, ... == (maxval - 1), >= maxval
 """
 function discretize(counts::Array{Int, 2}; maxval=8)
-    out = BitArray(size(counts)..., maxval)
+    out = BitArray(undef, size(counts)..., maxval)
     for i in 1:(maxval-1)
         out[:, :, i] = counts .== i
     end
@@ -16,7 +16,7 @@ end
 
 #
 function stone_color(board::Board)
-    result = BitArray(N, N, 3)
+    result = BitArray(undef, N, N, 3)
     cp = current_player(board)
     result[:, :, 1] = board.board .== cp
     result[:, :, 2] = board.board .== -cp
@@ -37,7 +37,7 @@ function turns_since(board::Board; maxval=8)
 end
 
 function liberties(board::Board; maxval=3)
-    liberties = Array{Int}(N,N)
+    liberties = Array{Int}(undef, N, N)
     for x in 1:N
         for y in 1:N
             point = Point(y,x)
@@ -115,7 +115,7 @@ function get_features(board::Board; features::Vector{Function}=DEFAULT_FEATURES)
     for feature in features
         push!(processed, feature(board))
     end
-    return cat(3, processed...)
+    return cat(processed..., dims=3)
 end
 
 # Run feature extraction on an empty board to get the dimensionality
@@ -127,4 +127,3 @@ end
 LIBERTIES = [perplayer_liberties]
 DEFAULT_FEATURES = [stone_color, liberties]
 ALL_FEATURES = [stone_color, liberties, ones, zeros, turns_since, after_move_features, player_color]
-

@@ -11,6 +11,8 @@
 # - Use linear index everywhere
 # - Optimize memory size (int sizes)
 
+using Printf
+
 import Base.getindex
 import Base.setindex!
 import Base.zeros
@@ -20,12 +22,12 @@ const N = 19
 
 # CONVENTION: Point is (y,x)
 # ^ I'm not sure if this was a good idea now.  May change.
-typealias Point Tuple{Int, Int}
-convert{T <: Integer}(::Type{Point}, x::Tuple{T, T}) = Point(x)
-Point{T <: Integer}(a::T, b::T) = Point((a, b))
+const Point = Tuple{Int, Int}
+convert(::Type{Point}, x::Tuple{T, T}) where {T <: Integer} = Point(x)
+Point(a::T, b::T) where {T <: Integer} = Point((a, b))
 # Memory ordered - n(x-1) + y
-linearindex{T<:Integer}(point::Tuple{T,T}) = N * (point[2] - 1) + point[1]
-function pointindex{T<:Integer}(index::T)
+linearindex(point::Tuple{T,T}) where {T<:Integer} = N * (point[2] - 1) + point[1]
+function pointindex(index::T) where {T<:Integer}
     x = ceil(Int, index / N)
     y = (index % N)
     if y == 0
@@ -34,8 +36,8 @@ function pointindex{T<:Integer}(index::T)
     Point(y, x)
 end
 
-typealias Color Int8
-typealias BoardArray Array{Color, 2}
+const Color = Int8
+const BoardArray = Array{Color, 2}
 const EMPTY = Color(0)
 const WHITE = Color(-1)
 const BLACK = Color(1)
@@ -62,18 +64,18 @@ end
 
 
 # TODO: PERFORMANCE Benchmark intsets versus Vector{Int}
-type Group
+mutable struct Group
     color::Color
     members::Vector{Point}
     liberties::Set{Point}
     Group(color::Color) = new(color, Vector{Int}(), Set{Point}())
 end
 
-type GroupSet
+mutable struct GroupSet
     groups::Vector{Group}  # linear index -> group
 end
 function GroupSet()
-    gs = Vector{Group}(N*N)
+    gs = Vector{Group}(undef, N*N)
     i = 1
     for x in 1:N
         for y in 1:N
@@ -100,7 +102,7 @@ setindex!(groups::GroupSet, group::Group, point::Integer) = groups.groups[point]
 remove_liberty(group::Group, point::Point) = setdiff!(group.liberties, [point])
 add_liberty(group::Group, point::Point) = push!(group.liberties, point)
 
-type Board
+mutable struct Board
     ko::Point  # 0,0 if none
     board::BoardArray
     order::Array{Int, 2}  # Move # when move was played
@@ -316,7 +318,7 @@ function get_neighbors(point::Point)
 end
 
 getindex(b::BoardArray, p::Point) = b[p...]
-setindex!{T}(b::Array{T, 2}, c::T, p::Point) = b[p...] = c
+setindex!(b::Array{T, 2}, c::T, p::Point) where {T} = b[p...] = c
 
 # TODO: Are multiple redirections optimized out?
 # Same for GroupSet
@@ -388,7 +390,7 @@ function play_move(board::Board, point::Point)
         # Check legality
         if !is_legal(board, point, color)
             # Should probably make this not an assert
-            println(STDERR, str_coord(point))
+            println(stderr, str_coord(point))
             print_pos(board)
             warn(board)
             @assert false && "Illegal move"
@@ -466,8 +468,8 @@ function liberty_counts(board::Board; flipped=false)
     join(reverse(rows), "\n")
 end
 
-print_pos(board::Board; output=STDERR, flipped=false) = println(output, board_repr(board, flipped=flipped))
-print_liberties(board::Board; output=STDERR, flipped=false) = println(output, liberty_counts(board, flipped=flipped))
+print_pos(board::Board; output=stderr, flipped=false) = println(output, board_repr(board, flipped=flipped))
+print_liberties(board::Board; output=stderr, flipped=false) = println(output, liberty_counts(board, flipped=flipped))
 
 print(board::Board) = println(board_repr(board))
 

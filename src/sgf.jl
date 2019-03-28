@@ -1,6 +1,6 @@
 # Simple utils for incrementally reading basic SGF files
 
-type SGF
+mutable struct SGF
     parts::Vector{AbstractString}
     cindex::Int
     finished::Bool
@@ -23,8 +23,7 @@ function playout_sgf(filecontents::AbstractString)
 end
 
 function load_sgf(filename::AbstractString)
-    f = open(filename, "r")
-    contents = readall(f)
+    contents = read(filename, String)
     SGF(contents)
 end
 
@@ -33,7 +32,7 @@ function SGF(contents::AbstractString; debug=false)
     # Check if there is a handicap - we want to ignore these
     handicap_regex = r"A[W|B]\[(|..)\]"
     if match(handicap_regex, contents) != nothing
-        debug && println(STDERR, "Contains handicaps")
+        debug && println(stderr, "Contains handicaps")
         return nothing
     end
 
@@ -82,7 +81,7 @@ function get_next_move(sgf::SGF)
             color = m.captures[1] == "B" ? BLACK : WHITE
             coords = m.captures[2]
             if color != sgf.cplayer
-                println(STDERR, "Incorrect color move in SGF: $(part)")
+                println(stderr, "Incorrect color move in SGF: $(part)")
                 sgf.error = true
                 return
             end

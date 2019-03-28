@@ -1,7 +1,7 @@
 using HDF5
 
 function move_onehot(move::Point)
-    board = BitArray(N, N)
+    board = BitArray(undef, N, N)
     fill!(board, false)
     board[linearindex(move)] = true
     board
