@@ -276,19 +276,20 @@ function add_stone(board::Board, point::Point, color::Color)
         group = merge_groups(groups, friends)
     end
 
-
     number_taken = 0
+    possible_ko = EMPTY_MOVE
     for foe in foes
         remove_liberty(foe, point)
         if length(foe.liberties) == 0
             number_taken += length(foe.members)
             remove_group(board, foe)
-            board.ko = foe.members[1]  # Set here and remove below if not actually Ko
+            possible_ko = foe.members[1]
         end
     end
 
-    # Clear Ko if it shouldn't be set
-    if number_taken != 1 || length(friends) != 0 || length(empties) != 0
+    if number_taken == 1 && length(friends) == 0 && length(empties) == 0
+        board.ko = possible_ko
+    else
         board.ko = EMPTY_MOVE
     end
 
@@ -356,27 +357,28 @@ function is_suicide(board::Board, point::Point, cplayer::Color)
     return true
 end
 
-# 1. Unoccupied
-# 2. Not illegal due to Ko rule
-# 3. Is not a suicide
-function is_legal(board::Board, point::Point, color::Color)
-    # Move must be on board
+function is_legal(board::Board, point::Point, color::Color, msg=false)
     if !onboard(point)
+        msg && println("Move must be on board")
         return false
     end
 
-    # Position must be empty
     if board[point] != EMPTY
+        msg && println("Position must be empty")
         return false
     end
 
-    # Cannot violate Ko rule
     if board.ko == point
+        msg && println("Cannot violate Ko rule")
         return false
     end
 
-    # Finally, check if it is a suicide
-    return !is_suicide(board, point, color)
+    if is_suicide(board, point, color)
+        msg && println("Suicide is not allowed")
+        return false
+    end
+
+    return true
 end
 
 function play_move(board::Board, point::Point)
@@ -386,17 +388,16 @@ function play_move(board::Board, point::Point)
         if board.last_move == PASS_MOVE
             # TODO: Game technically ends
         end
+        board.ko = EMPTY_MOVE # would be done by add_stone
     else
         # Check legality
-        if !is_legal(board, point, color)
+        if !is_legal(board, point, color, true)
             # Should probably make this not an assert
-            println(stderr, str_coord(point))
+            println(stderr, ascii[color], str_coord(point))
             print_pos(board)
-            warn(board)
-            @assert false && "Illegal move"
+            @error "Illegal move"
         end
 
-        board.ko = PASS_MOVE
         board.order[linearindex(point)] = board.cmove - 1
         add_stone(board, point, color)
     end
@@ -432,7 +433,7 @@ const ascii = Dict(
                    )
 
 function board_repr(board::Board; flipped=false)
-    rows = Vector{ASCIIString}()
+    rows = Vector{String}()
     mapper = char -> ascii[char]
     for row in 1:N
         row_repr = join(map(mapper, board.board[row, :]), "")

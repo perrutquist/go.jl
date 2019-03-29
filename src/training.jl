@@ -32,14 +32,14 @@ function generate_training_data(filename::AbstractString;
 end
 
 "Generate training data for many sgf files"
-function generate_training_data(filenames::Vector{AbstractString};
+function generate_training_data(filenames::Vector{<:AbstractString};
                                 progress_update=100,
                                 features::Vector{Function} = DEFAULT_FEATURES)
     examples = Vector{Tuple{BitArray, BitArray}}()
     tm = time()
     for (i, filename) in enumerate(filenames)
         if i % progress_update == 0
-            println(STDERR, "$(i)/$(length(filenames)): $(time() - tm)")
+            println(stderr, "$(i)/$(length(filenames)): $(time() - tm)")
         end
 	game = generate_training_data(filename, features=features)
         if length(game) > 0
@@ -47,6 +47,21 @@ function generate_training_data(filenames::Vector{AbstractString};
         end
     end
     examples
+end
+
+"Find all sgf files by recursing a directory structure"
+function findsgf(dir::AbstractString)
+    list = Vector{String}()
+    pattern  = r".sgf$"
+
+    for (root, dirs, files) in walkdir(dir)
+        for file in files
+            if match(pattern, file) != nothing
+                push!(list, joinpath(root, file))
+            end
+        end
+    end
+    return list
 end
 
 "Extract training data directly to an hdf5 file"
@@ -65,7 +80,7 @@ function extract_to_hdf5(hf5_filename::AbstractString, filenames::Vector{Abstrac
     nexamples = 0
     for (i, filename) in enumerate(filenames)
         if i % progress_update == 0
-            println(STDERR, "$(i)/$(length(filenames)): $(time() - tm)")
+            println(stderr, "$(i)/$(length(filenames)): $(time() - tm)")
         end
         game = generate_training_data(filename, features=features)
         if length(game) > 0

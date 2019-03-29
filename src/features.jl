@@ -24,12 +24,28 @@ function stone_color(board::Board)
     result
 end
 
+"Black/white stone for each position on board. Alternative to `stone_color`."
+function stone_blackwhite(board::Board)
+    result = BitArray(undef, N, N, 2)
+    result[:, :, 1] = board.board .== BLACK
+    result[:, :, 2] = board.board .== WHITE
+    return result
+end
+
+function is_ko(board::Board)
+    result = fill!(BitArray(undef, N, N), false)
+    if board.ko != EMPTY_MOVE && board.ko != PASS_MOVE
+        result[board.ko...] = true
+    end
+    return result
+end
+
 function ones(board::Board)
-    fill!(BitArray(N, N), true)
+    fill!(BitArray(undef, N, N), true)
 end
 
 function zeros(board::Board)
-    fill!(BitArray(N, N), false)
+    fill!(BitArray(undef, N, N), false)
 end
 
 function turns_since(board::Board; maxval=8)
@@ -106,8 +122,10 @@ end
 
 function player_color(board::Board)
     is_black = current_player(board) == BLACK
-    fill!(BitArray(N, N), is_black)
+    fill!(BitArray(undef, N, N), is_black)
 end
+
+const DEFAULT_FEATURES = [stone_blackwhite, is_ko]
 
 #TODO: Provide features memory to write into to avoid unnecessary copies
 function get_features(board::Board; features::Vector{Function}=DEFAULT_FEATURES)
@@ -122,8 +140,3 @@ end
 function get_input_size(features::Vector{Function})
     size(get_features(Board(), features=features))
 end
-
-# TODO: Make a FeatureSet type to hold this
-LIBERTIES = [perplayer_liberties]
-DEFAULT_FEATURES = [stone_color, liberties]
-ALL_FEATURES = [stone_color, liberties, ones, zeros, turns_since, after_move_features, player_color]
