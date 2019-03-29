@@ -11,7 +11,7 @@ function gtp(policy::Policy)
     while true
         println(stderr, "start====")
         flush(stderr)
-        if eof(STDIN)
+        if eof(stdin)
             return
         end
         line = readline()
@@ -70,10 +70,10 @@ function gtp(policy::Policy)
         elseif command[1] == "version"
             ret = "Go bot written in Julia"
         elseif command[1] == "tsdebug"
-            print_pos(board, output=STDOUT)
+            print_pos(board, output=stdout)
         elseif command[1] == "ldebug"
             # Print liberties of each stone
-            print_liberties(board, output=STDOUT)
+            print_liberties(board, output=stdout)
         elseif command[1] == "list_commands"
             ret = join(known_commands, "\n")
         elseif command[1] == "known_command"
@@ -95,7 +95,7 @@ function gtp(policy::Policy)
         end
         @printf("%s", out)
         println(stderr, out)
-        flush(STDOUT)
+        flush(stdout)
         flush(stderr)
     end
 end
